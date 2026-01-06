@@ -40,6 +40,17 @@ IP_PROXY_PROVIDER_NAME = "kuaidaili"  # kuaidaili | wandouhttp
 # 抖音如果一直提示失败，打开浏览器看下是否扫码登录之后出现了手机号验证，如果出现了手动过一下再试。
 HEADLESS = False
 
+# ==================== 无浏览器模式配置 ====================
+# 是否启用无浏览器模式（纯 HTTP 请求模式）
+# True: 使用纯 HTTP 请求，无需启动浏览器（需要手动配置 Cookie）
+#       优点：启动快、资源占用低、适合服务器部署
+#       缺点：需要手动获取 Cookie，无法处理验证码
+# False: 使用 Playwright 浏览器模式（原有方式）
+#       优点：自动登录、可处理验证码
+#       缺点：启动慢、资源占用高
+# 注意：目前仅抖音平台支持无浏览器模式，其他平台将忽略此配置
+ENABLE_NO_BROWSER_MODE = True
+
 # 是否保存登录状态
 SAVE_LOGIN_STATE = True
 
