@@ -44,18 +44,33 @@ class DouYinCrawlerNoBrowser(DouYinCrawler):
         self._load_cookies_config()
 
     def _load_cookies_config(self) -> None:
-        """加载 Cookie 配置文件"""
+        """加载 Cookie 配置（优先使用命令行参数）"""
+        # 优先使用命令行参数（通过 config.COOKIES 传入）
+        cookie_from_config = getattr(config, 'COOKIES', '')
+        user_agent_from_config = getattr(config, 'USER_AGENT', '')
+
+        if cookie_from_config:
+            # 使用命令行参数或配置文件中的 COOKIES
+            self.cookie_string = cookie_from_config
+            self.user_agent = user_agent_from_config or "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            self.ms_token = generate_ms_token()
+            utils.logger.info("[DouYinCrawlerNoBrowser] 使用配置的 Cookie")
+            utils.logger.info(f"[DouYinCrawlerNoBrowser] msToken 已自动生成: {self.ms_token[:20]}...")
+            return
+
+        # 否则从配置文件读取
         config_file = "douyin_cookies_config.json"
         if not os.path.exists(config_file):
             utils.logger.error(f"[DouYinCrawlerNoBrowser] Cookie 配置文件不存在: {config_file}")
-            utils.logger.error(f"[DouYinCrawlerNoBrowser] 请复制 douyin_cookies_config.json.example 为 {config_file}")
-            raise FileNotFoundError(f"请创建 {config_file} 配置文件")
+            utils.logger.error(f"[DouYinCrawlerNoBrowser] 请使用命令行参数或创建配置文件")
+            utils.logger.error(f"[DouYinCrawlerNoBrowser] 命令行示例: --cookie_string 'your_cookie' --user_agent 'your_ua'")
+            raise FileNotFoundError(f"请创建 {config_file} 配置文件或使用命令行参数")
 
         with open(config_file, 'r', encoding='utf-8') as f:
             cookie_config = json.load(f)
 
         self.cookie_string = cookie_config.get("cookie_string", "")
-        self.ms_token = generate_ms_token()  # 自动生成 msToken
+        self.ms_token = generate_ms_token()
         self.user_agent = cookie_config.get(
             "user_agent",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"

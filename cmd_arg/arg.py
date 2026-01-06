@@ -232,6 +232,14 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
                 rich_help_panel="Account Configuration",
             ),
         ] = config.COOKIES,
+        user_agent: Annotated[
+            str,
+            typer.Option(
+                "--user_agent",
+                help="User-Agent string (optional, for no-browser mode)",
+                rich_help_panel="Account Configuration",
+            ),
+        ] = "",
         specified_id: Annotated[
             str,
             typer.Option(
@@ -272,6 +280,10 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
         config.CDP_HEADLESS = enable_headless
         config.SAVE_DATA_OPTION = save_data_option.value
         config.COOKIES = cookies
+
+        # Set user_agent if provided
+        if user_agent:
+            config.USER_AGENT = user_agent
 
         # Set platform-specific ID lists for detail/creator mode
         if specified_id_list:
