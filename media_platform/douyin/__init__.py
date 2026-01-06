@@ -18,4 +18,19 @@
 # 使用本代码即表示您同意遵守上述原则和LICENSE中的所有条款。
 
 
-from .core import DouYinCrawler
+# 根据配置自动选择爬虫模式
+try:
+    import config
+    ENABLE_NO_BROWSER = getattr(config, 'ENABLE_NO_BROWSER_MODE', False)
+except (ImportError, AttributeError):
+    ENABLE_NO_BROWSER = False
+
+if ENABLE_NO_BROWSER:
+    # 使用无浏览器模式（扩展版本）
+    from .crawler_no_browser import DouYinCrawlerNoBrowser as DouYinCrawler
+else:
+    # 使用原有浏览器模式
+    from .core import DouYinCrawler
+
+__all__ = ['DouYinCrawler']
+
