@@ -2,15 +2,18 @@ import asyncio
 import json
 import os
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Optional
+
+import temporalio.exceptions
 from temporalio import activity
 from temporalio.client import Client
 from temporalio.worker import Worker
+from temporalio.exceptions import ApplicationError
 
 # 导入 MediaCrawler 相关模块
 import config
 from main import CrawlerFactory
+from media_platform.douyin.exception import DataFetchError
 from tools.utils import utils
 
 
@@ -42,6 +45,14 @@ class VideoMetadata:
     note_download_url: Optional[str] = None  # 图文下载URL
     source_keyword: Optional[str] = None  # 来源关键词
     raw_metadata: Optional[dict] = None  # 原始完整元数据
+
+
+@dataclass
+class CookieInfo:
+    """视频元数据"""
+    id: int  # 视频ID
+    cookie: str  # 视频标题
+    userAgent: str  # 视频描述
 
 
 async def _get_metadata_(video_id: str):
@@ -78,28 +89,29 @@ async def _get_metadata_(video_id: str):
 
 
 @activity.defn(name="getVideoMetadata")
-async def get_metadata(video_id: str) -> VideoMetadata:
+async def get_metadata(video_id: str, cookie: CookieInfo) -> VideoMetadata:
     """
     获取抖音视频元数据
 
     Args:
+        cookie: cookie 信息
         video_id: 抖音视频ID，例如 "7589312341498416434"
 
     Returns:
         VideoMetadata: 视频元数据对象，包含视频信息和本地文件路径
     """
-    activity.logger.info(f"开始下载抖音视频: {video_id}")
+    activity.logger.info(f"开始获取抖音视频元数据: {video_id}")
 
     try:
-        video_dir = f"data/douyin/videos/{video_id}"
         # 配置爬虫参数（模拟命令行参数 --platform dy --lt cookie --type detail --specified_id xxx）
         config.PLATFORM = "dy"  # 抖音平台
-        config.LOGIN_TYPE = "cookie"  # Cookie登录方式
+        # config.LOGIN_TYPE = "cookie"  # Cookie登录方式
         config.CRAWLER_TYPE = "detail"  # 详情模式
+        config.ENABLE_GET_COMMENTS = False
+        config.ENABLE_GET_MEIDAS = False
+        config.ENABLE_NO_BROWSER_MODE = True
+        config.COOKIES = cookie.cookie
         config.DY_SPECIFIED_ID_LIST = [video_id]  # 指定视频ID列表
-
-        # 确保启用媒体下载
-        config.ENABLE_GET_MEIDAS = True
 
         activity.logger.info(f"配置参数: platform={config.PLATFORM}, login_type={config.LOGIN_TYPE}, type={config.CRAWLER_TYPE}")
 
@@ -112,9 +124,12 @@ async def get_metadata(video_id: str) -> VideoMetadata:
         # 下载完成后，获取视频元数据
         activity.logger.info(f"视频下载完成，开始获取元数据: {video_id}")
         raw_metadata = await _get_metadata_(video_id)
-
         if not raw_metadata:
-            raise Exception(f"无法获取视频 {video_id} 的元数据")
+            raise ApplicationError(
+                str(f'video_id={video_id}不正确，无法获取元数据'),
+                non_retryable=False,
+                type='ID_NOT_FOUND'
+            )
 
         # 提取关键字段构建 VideoMetadata 对象（直接映射 JSON 字段）
         metadata = VideoMetadata(
@@ -147,11 +162,31 @@ async def get_metadata(video_id: str) -> VideoMetadata:
 
         activity.logger.info(f"视频元数据获取成功: {video_id}, 标题: {metadata.title}")
         return metadata
+    except DataFetchError as ex:
+        utils.logger.error(f"[DouYinCrawler.get_aweme_detail] Get aweme detail error: {ex}")
+        raise ApplicationError(
+            str(ex),
+            non_retryable=False,
+            type='DATA_FETCH_ERROR'
+        )
 
-    except Exception as e:
-        error_msg = f"下载视频失败: {video_id}, 错误: {str(e)}"
-        activity.logger.error(error_msg)
-        raise Exception(error_msg)
+    except KeyError as ex:
+        utils.logger.error(f"[DouYinCrawler.get_aweme_detail] have not fund note detail aweme_id:{video_id}, err: {ex}")
+        raise ApplicationError(
+            str(ex),
+            non_retryable=False,
+            type='ID_NOT_FOUND'
+        )
+    except ApplicationError as ex:
+        raise ex
+    except Exception as ex:
+        utils.logger.error(f"获取视频元数据失败: {video_id}, 错误: {str(ex)}")
+        raise ApplicationError(
+            str(ex),
+            non_retryable=False,
+            type='OTHER'
+        )
+
 
 # 启动 Worker
 async def main():
@@ -167,6 +202,7 @@ async def main():
 
     print("Python Video Worker 已启动，等待任务...")
     await worker.run()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
