@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "idea-mcp": {
+      "type": "stdio",
+      "env": {
+        "IJ_MCP_SERVER_PORT": "64343"
+      },
+      "command": "C:\\Users\\miaoj\\AppData\\Local\\Programs\\IntelliJ IDEA Ultimate\\jbr\\bin\\java",
+      "args": [
+        "-classpath",
+        "C:\\Users\\miaoj\\AppData\\Roaming\\JetBrains\\IntelliJIdea2025.3\\plugins\\mcpserver\\lib\\mcpserver.jar;C:\\Users\\miaoj\\AppData\\Roaming\\JetBrains\\IntelliJIdea2025.3\\plugins\\mcpserver\\lib\\io.modelcontextprotocol.kotlin.sdk.jar;C:\\Users\\miaoj\\AppData\\Roaming\\JetBrains\\IntelliJIdea2025.3\\plugins\\mcpserver\\lib\\io.github.oshai.kotlin.logging.jvm.jar;C:\\Users\\miaoj\\AppData\\Local\\Programs\\IntelliJ IDEA Ultimate\\lib\\util-8.jar;C:\\Users\\miaoj\\AppData\\Local\\Programs\\IntelliJ IDEA Ultimate\\lib\\module-intellij.libraries.ktor.client.cio.jar;C:\\Users\\miaoj\\AppData\\Local\\Programs\\IntelliJ IDEA Ultimate\\lib\\module-intellij.libraries.ktor.client.jar;C:\\Users\\miaoj\\AppData\\Local\\Programs\\IntelliJ IDEA Ultimate\\lib\\module-intellij.libraries.ktor.network.tls.jar;C:\\Users\\miaoj\\AppData\\Local\\Programs\\IntelliJ IDEA Ultimate\\lib\\module-intellij.libraries.ktor.io.jar;C:\\Users\\miaoj\\AppData\\Local\\Programs\\IntelliJ IDEA Ultimate\\lib\\module-intellij.libraries.ktor.utils.jar;C:\\Users\\miaoj\\AppData\\Local\\Programs\\IntelliJ IDEA Ultimate\\lib\\module-intellij.libraries.kotlinx.io.jar;C:\\Users\\miaoj\\AppData\\Local\\Programs\\IntelliJ IDEA Ultimate\\lib\\module-intellij.libraries.kotlinx.serialization.core.jar;C:\\Users\\miaoj\\AppData\\Local\\Programs\\IntelliJ IDEA Ultimate\\lib\\module-intellij.libraries.kotlinx.serialization.json.jar",
+        "com.intellij.mcpserver.stdio.McpStdioRunnerKt"
+      ]
+    }
+  }
+}
