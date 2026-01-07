@@ -6,13 +6,13 @@ import asyncio
 import json
 import os
 import random
+from typing import Any
 from typing import Optional
 
 import config
 from proxy.proxy_ip_pool import IpInfoModel, create_ip_pool
 from tools import utils
 from var import crawler_type_var
-
 from .client_no_browser import DouYinClientNoBrowser
 from .core import DouYinCrawler
 
@@ -147,3 +147,12 @@ class DouYinCrawlerNoBrowser(DouYinCrawler):
     async def close(self) -> None:
         """关闭爬虫"""
         utils.logger.info("[DouYinCrawlerNoBrowser] 爬虫已关闭")
+
+    async def get_aweme_detail(self, aweme_id: str, semaphore: asyncio.Semaphore) -> Any:
+        """Get note detail"""
+        async with semaphore:
+            result = await self.dy_client.get_video_by_id(aweme_id)
+            # Sleep after fetching aweme detail
+            await asyncio.sleep(config.CRAWLER_MAX_SLEEP_SEC)
+            utils.logger.info(f"[DouYinCrawler.get_aweme_detail] Sleeping for {config.CRAWLER_MAX_SLEEP_SEC} seconds after fetching aweme {aweme_id}")
+            return result
