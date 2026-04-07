@@ -184,3 +184,4 @@ database/*.db
 douyin_cookies_config.json
 .mcp.json
 CLAUDE.md
+.ace-tool

@@ -6,6 +6,17 @@
 # GitHub: https://github.com/NanmiCoder
 # Licensed under NON-COMMERCIAL LEARNING LICENSE 1.1
 #
+import os
+import random
+import re
+
+import execjs
+import execjs._runner_sources as execjs_runner_sources
+from playwright.async_api import Page
+
+import config
+from model.m_douyin import VideoUrlInfo, CreatorUrlInfo
+from tools.crawler_util import extract_url_params_to_dict
 
 # 声明：本代码仅供学习和研究目的使用。使用者应遵守以下原则：
 # 1. 不得用于任何商业用途。
@@ -16,25 +27,59 @@
 #
 # 详细许可条款请参阅项目根目录下的LICENSE文件。
 # 使用本代码即表示您同意遵守上述原则和LICENSE中的所有条款。
-
-
 # -*- coding: utf-8 -*-
 # @Author  : relakkes@gmail.com
 # @Name: Programmer Ajiang-Relakkes
 # @Time    : 2024/6/10 02:24
 # @Desc    : Get a_bogus parameter, for learning and communication only, do not use for commercial purposes, contact author to delete if infringement
 
-import random
-import re
-from typing import Optional
+_douyin_sign_obj = None
+_douyin_sign_runtime_key = None
 
-import execjs
-from playwright.async_api import Page
 
-from model.m_douyin import VideoUrlInfo, CreatorUrlInfo
-from tools.crawler_util import extract_url_params_to_dict
+def _load_douyin_sign_source() -> str:
+    with open("libs/douyin.js", encoding="utf-8-sig") as f:
+        return f.read()
 
-douyin_sign_obj = execjs.compile(open('libs/douyin.js', encoding='utf-8-sig').read())
+
+def _build_douyin_runtime(node_path: str):
+    if node_path:
+        normalized_node_path = os.path.abspath(node_path)
+        runtime = execjs.ExternalRuntime(
+            name="Node.js (Custom)",
+            command=[normalized_node_path],
+            runner_source=execjs_runner_sources.Node,
+            encoding="UTF-8",
+        )
+        if os.path.isfile(normalized_node_path):
+            runtime._binary_cache = [normalized_node_path]
+            runtime._available = True
+        if not runtime.is_available():
+            raise RuntimeError(f"Configured NODE_PATH is unavailable: {node_path}")
+        return runtime
+
+    runtime = execjs.get()
+    if runtime.name == "JScript":
+        raise RuntimeError(
+            "PyExecJS selected JScript, which cannot execute libs/douyin.js. "
+            "Install Node.js or set config.NODE_PATH to a valid node executable."
+        )
+    return runtime
+
+
+def get_douyin_sign_obj():
+    global _douyin_sign_obj, _douyin_sign_runtime_key
+
+    node_path = (getattr(config, "NODE_PATH", "") or "").strip()
+    runtime_key = node_path or "__auto__"
+    if _douyin_sign_obj is not None and _douyin_sign_runtime_key == runtime_key:
+        return _douyin_sign_obj
+
+    runtime = _build_douyin_runtime(node_path)
+    _douyin_sign_obj = runtime.compile(_load_douyin_sign_source())
+    _douyin_sign_runtime_key = runtime_key
+    return _douyin_sign_obj
+
 
 def get_web_id():
     """
@@ -57,12 +102,12 @@ def get_web_id():
     return web_id.replace('-', '')[:19]
 
 
-
 async def get_a_bogus(url: str, params: str, post_data: dict, user_agent: str, page: Page = None):
     """
     Get a_bogus parameter, currently does not support POST request type signature
     """
     return get_a_bogus_from_js(url, params, user_agent)
+
 
 def get_a_bogus_from_js(url: str, params: str, user_agent: str):
     """
@@ -78,8 +123,7 @@ def get_a_bogus_from_js(url: str, params: str, user_agent: str):
     sign_js_name = "sign_datail"
     if "/reply" in url:
         sign_js_name = "sign_reply"
-    return douyin_sign_obj.call(sign_js_name, params, user_agent)
-
+    return get_douyin_sign_obj().call(sign_js_name, params, user_agent)
 
 
 async def get_a_bogus_from_playwright(params: str, post_data: dict, user_agent: str, page: Page):
