@@ -17,6 +17,8 @@
 # 详细许可条款请参阅项目根目录下的LICENSE文件。
 # 使用本代码即表示您同意遵守上述原则和LICENSE中的所有条款。
 
+ENABLE_NO_BROWSER_MODE = True
+
 # Basic configuration
 PLATFORM = "xhs"  # Platform, xhs | dy | ks | bili | wb | tieba | zhihu
 KEYWORDS = "编程副业,编程兼职"  # Keyword search configuration, separated by English commas
@@ -71,7 +73,7 @@ BROWSER_LAUNCH_TIMEOUT = 60
 AUTO_CLOSE_BROWSER = True
 
 # Data saving type option configuration, supports: csv, db, json, jsonl, sqlite, excel, postgres. It is best to save to DB, with deduplication function.
-SAVE_DATA_OPTION = "jsonl"  # csv or db or json or jsonl or sqlite or excel or postgres
+SAVE_DATA_OPTION = "sqlite"  # csv or db or json or jsonl or sqlite or excel or postgres
 
 # Data saving path, if not specified by default, it will be saved to the data folder.
 SAVE_DATA_PATH = ""
