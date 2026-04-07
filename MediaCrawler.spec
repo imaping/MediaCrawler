@@ -4,11 +4,75 @@
 # 需要: pip install playwright (不需要 playwright install)
 # 运行环境需要: Node.js (用于 PyExecJS 签名)
 
+import importlib.util
 import os
 import sys
+from pathlib import Path
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 block_cipher = None
+project_root = Path.cwd().resolve()
+
+
+def _collect_project_site_packages() -> list[str]:
+    candidates: list[Path] = []
+    windows_site_packages = project_root / ".venv" / "Lib" / "site-packages"
+    if windows_site_packages.is_dir():
+        candidates.append(windows_site_packages)
+
+    posix_lib_root = project_root / ".venv" / "lib"
+    if posix_lib_root.is_dir():
+        candidates.extend(
+            site_packages
+            for site_packages in posix_lib_root.glob("python*/site-packages")
+            if site_packages.is_dir()
+        )
+
+    return [str(path) for path in candidates]
+
+
+project_site_packages = _collect_project_site_packages()
+for site_packages in reversed(project_site_packages):
+    if site_packages not in sys.path:
+        sys.path.insert(0, site_packages)
+
+
+required_build_modules = [
+    "aiofiles",
+    "aiomysql",
+    "aiosqlite",
+    "click",
+    "cryptography",
+    "dotenv",
+    "execjs",
+    "httpx",
+    "jieba",
+    "openpyxl",
+    "pandas",
+    "parsel",
+    "playwright",
+    "pydantic",
+    "humps",
+    "redis",
+    "sqlalchemy",
+    "tenacity",
+    "typer",
+    "typing_extensions",
+    "wordcloud",
+]
+missing_build_modules = [
+    module_name
+    for module_name in required_build_modules
+    if importlib.util.find_spec(module_name) is None
+]
+if missing_build_modules:
+    missing_modules_text = ", ".join(missing_build_modules)
+    raise SystemExit(
+        "PyInstaller build environment is missing required packages: "
+        f"{missing_modules_text}\n"
+        f"Current interpreter: {sys.executable}\n"
+        "Run 'uv sync' first, then rebuild with '.\\.venv\\Scripts\\python.exe -m PyInstaller .\\MediaCrawler.spec --clean'."
+    )
 
 # ==================== 数据文件 ====================
 # 项目自身的数据文件
@@ -101,7 +165,7 @@ hidden_imports = [
     'execjs',
     'execjs._external_runtime',
     'parsel',
-    'pyhumps',
+    'humps',
     'dotenv',
     'jieba',
     'wordcloud',
@@ -121,12 +185,12 @@ hidden_imports = [
     'playwright.async_api',
     'playwright._impl',
     'playwright._impl._errors',
-]
+] + collect_submodules('typer') + collect_submodules('click')
 
 # ==================== 分析 ====================
 a = Analysis(
     ['bootstrap.py'],
-    pathex=['.'],
+    pathex=['.', *project_site_packages],
     binaries=[],
     datas=all_datas,
     hiddenimports=hidden_imports,

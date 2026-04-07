@@ -19,6 +19,7 @@
 
 
 import os
+import sys
 
 # mysql config
 MYSQL_DB_PWD = os.getenv("MYSQL_DB_PWD", "123456")
@@ -46,8 +47,16 @@ REDIS_DB_NUM = os.getenv("REDIS_DB_NUM", 0)  # your redis db num
 CACHE_TYPE_REDIS = "redis"
 CACHE_TYPE_MEMORY = "memory"
 
+if getattr(sys, "frozen", False):
+    base_dir = os.path.dirname(sys.executable)
+else:
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+
+db_dir = os.path.join(base_dir, "database")
+os.makedirs(db_dir, exist_ok=True)
+
 # sqlite config
-SQLITE_DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "database", "sqlite_tables.db")
+SQLITE_DB_PATH = os.path.join(db_dir, "sqlite_tables.db")
 
 sqlite_db_config = {
     "db_path": SQLITE_DB_PATH
